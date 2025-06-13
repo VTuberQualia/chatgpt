@@ -9,7 +9,6 @@ from .model import ReadinessModel
 
 
 def train(dataset_dir: Path, epochs: int = 10):
-
     """Train the readiness classifier with videos under ``dataset_dir``.
 
     A ``labels.csv`` file should map video file names to ``ok`` or ``ng``.
@@ -19,25 +18,18 @@ def train(dataset_dir: Path, epochs: int = 10):
     if labels_file.exists():
         with labels_file.open() as f:
             for line in f:
-                name, lab = line.strip().split(',')
-                label_map[name] = 1.0 if lab.lower() == 'ok' else 0.0
+                name, lab = line.strip().split(",")
+                label_map[name] = 1.0 if lab.lower() == "ok" else 0.0
 
-=======
-
-    videos = list(dataset_dir.glob('*.mp4'))
+    videos = list(dataset_dir.glob("*.mp4"))
     features = []
     labels = []
     for video in videos:
         frames = list(load_video_frames(video))
         motion = compute_motion_vectors(frames)
         features.append(torch.tensor(motion, dtype=torch.float32))
-
         label_value = label_map.get(video.name, 0.0)
         labels.append(torch.tensor([label_value]))
-=======
-        # Dummy label placeholder
-        labels.append(torch.tensor([0.0]))
-
 
     # Pad sequences to the same length for this example
     padded = torch.nn.utils.rnn.pad_sequence(features, batch_first=True)
@@ -58,7 +50,8 @@ def train(dataset_dir: Path, epochs: int = 10):
             optimizer.step()
     return model
 
+
 if __name__ == "__main__":
-    dataset_path = Path('data')
+    dataset_path = Path("data")
     trained_model = train(dataset_path)
-    torch.save(trained_model.state_dict(), 'model.pt')
+    torch.save(trained_model.state_dict(), "model.pt")
