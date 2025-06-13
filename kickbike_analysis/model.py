@@ -1,7 +1,4 @@
-"""PyTorch model definition for readiness prediction.
 
-Outputs the probability that the rider is ready (``OK`` class).
-"""
 import torch
 from torch import nn
 

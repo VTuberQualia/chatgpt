@@ -1,7 +1,4 @@
-"""Video loading utilities for the Kickbike Readiness Analyzer.
 
-Videos may be captured from arbitrary angles and resolutions.
-"""
 from pathlib import Path
 import cv2
 

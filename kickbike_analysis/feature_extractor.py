@@ -1,7 +1,4 @@
-"""Feature extraction methods for kickbike movement analysis.
 
-Currently uses simple optical flow to remain robust to camera angles.
-"""
 from typing import Iterable
 import cv2
 import numpy as np

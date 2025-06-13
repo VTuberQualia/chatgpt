@@ -1,3 +1,4 @@
+
 # キックバイク乗りこなし判定AI
 
 このリポジトリは、子どもがキックバイクに乗っている映像を解析し、ペダル付き自転車に乗れるようになる時期を推定するプロトタイプです。
@@ -17,24 +18,22 @@
    - データセットを追加してもコード変更なしで学習と推論を切り替えられるようにする。
 
 ## プログラム構成
+=======
+# Kickbike Readiness Analyzer
 
-```
-kickbike_analysis/
-├── __init__.py
-├── data_loader.py      # 動画読み込みとフレーム抽出
-├── feature_extractor.py# フレームから動作特徴量を計算
-├── model.py            # 機械学習モデル定義
-├── train.py            # 学習エントリーポイント
-└── infer.py            # 推論を行うスクリプト
-```
+This repository provides a prototype for analyzing videos of children riding kickbikes to estimate when they are ready to transition to pedal bicycles.
 
-- **data_loader.py**: 動画ファイルを読み込み、フレームやクリップに分割します。
-- **feature_extractor.py**: 姿勢推定などを用いて数値特徴量を生成します。
-- **model.py**: これらの特徴量を入力とする PyTorch 製のモデルを定義します。
-- **train.py**: `data_loader` と `feature_extractor` を利用してラベル付きデータからモデルを学習します。
-- **infer.py**: 学習済みモデルを読み込み、未知の動画に対してOK/NGを判定します。
+## Requirements Definition
 
-モジュールを分離することで各要素を個別にテスト・拡張しやすい構成としています。
+1. **Input Data**: Video footage of children riding kickbikes. Footage should capture the whole body from a side view whenever possible.
+2. **Output**: An estimated readiness score or predicted timeframe for successfully riding a pedal bike.
+3. **Functional Requirements**
+   - Extract frames from input video and detect the child and kickbike.
+   - Track body posture and motion features such as balance, steering control, and push force.
+   - Train a machine learning model on labeled examples (ready vs not-ready) to learn correlations between motion features and readiness.
+   - Provide an inference script that takes a new video and outputs a readiness prediction.
+4. **Non‑Functional Requirements**
+   - The system should run on Python 3 and rely on widely available packages (OpenCV for video processing, PyTorch for ML training).
+   - Training and inference should be separated so new datasets can be added without code changes.
 
-学習用ディレクトリには `labels.csv` を配置し、各動画ファイル名と
-`ok` または `ng` のラベルをカンマ区切りで記載してください。
+## Program Structure
