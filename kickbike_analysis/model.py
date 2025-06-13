@@ -1,4 +1,4 @@
-"""PyTorch model definition for readiness prediction."""
+
 import torch
 from torch import nn
 

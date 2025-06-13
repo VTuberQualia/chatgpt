@@ -1,3 +1,24 @@
+
+# キックバイク乗りこなし判定AI
+
+このリポジトリは、子どもがキックバイクに乗っている映像を解析し、ペダル付き自転車に乗れるようになる時期を推定するプロトタイプです。
+
+## 要件定義
+
+1. **入力データ**: 子どもとキックバイクが写っている動画。角度や大きさは問いません。
+2. **出力**: ペダル付き自転車に乗れるかどうかの二択（OK/NG）。
+3. **機能要件**
+   - 動画からフレームを抽出し、子どもとキックバイクを検出する。
+   - バランス、ハンドル操作、蹴り出しの強さなど動きの特徴量を算出する。
+   - 準備が整っているかどうかラベル付けされたデータを使い、特徴量と準備度の相関を学習する。
+   - 新しい動画を入力すると準備度を推定する推論用スクリプトを提供する。
+4. **非機能要件**
+   - Python 3 を使用し、映像処理には OpenCV、学習には PyTorch など一般的なパッケージを利用する。
+   - 家庭のスマートフォンで撮影された角度や画角がまちまちな動画を想定する。
+   - データセットを追加してもコード変更なしで学習と推論を切り替えられるようにする。
+
+## プログラム構成
+=======
 # Kickbike Readiness Analyzer
 
 This repository provides a prototype for analyzing videos of children riding kickbikes to estimate when they are ready to transition to pedal bicycles.
@@ -16,21 +37,3 @@ This repository provides a prototype for analyzing videos of children riding kic
    - Training and inference should be separated so new datasets can be added without code changes.
 
 ## Program Structure
-
-```
-kickbike_analysis/
-├── __init__.py
-├── data_loader.py      # Load video files and extract frames
-├── feature_extractor.py# Compute movement features from frames
-├── model.py            # Define ML model architecture
-├── train.py            # Training entry point
-└── infer.py            # Run inference on new videos
-```
-
-- **data_loader.py** handles reading video files and splitting them into frames or clips.
-- **feature_extractor.py** applies computer vision techniques (e.g., pose estimation) to generate numerical features describing each frame.
-- **model.py** contains a model class built with PyTorch; it may be a neural network that ingests sequences of features.
-- **train.py** uses data from `data_loader` and `feature_extractor` to train the model on labeled readiness data.
-- **infer.py** loads a trained model and outputs readiness scores for unseen videos.
-
-This structure focuses on modularity and allows separate testing for each component.

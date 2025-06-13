@@ -1,4 +1,4 @@
-"""Feature extraction methods for kickbike movement analysis."""
+
 from typing import Iterable
 import cv2
 import numpy as np

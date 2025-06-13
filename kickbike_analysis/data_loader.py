@@ -1,4 +1,4 @@
-"""Video loading utilities for the Kickbike Readiness Analyzer."""
+
 from pathlib import Path
 import cv2
 
