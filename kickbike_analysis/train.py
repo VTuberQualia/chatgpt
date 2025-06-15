@@ -27,9 +27,16 @@ def train(dataset_dir: Path, epochs: int = 10):
     for video in videos:
         frames = list(load_video_frames(video))
         motion = compute_motion_vectors(frames)
+        if motion.size == 0:
+            continue
         features.append(torch.tensor(motion, dtype=torch.float32))
         label_value = label_map.get(video.name, 0.0)
         labels.append(torch.tensor([label_value]))
+
+    if not features:
+        raise RuntimeError(
+            f"No usable data found in {dataset_dir}. Ensure *.mp4 videos exist and contain motion."
+        )
 
     # Pad sequences to the same length for this example
     padded = torch.nn.utils.rnn.pad_sequence(features, batch_first=True)
@@ -52,6 +59,7 @@ def train(dataset_dir: Path, epochs: int = 10):
 
 
 if __name__ == "__main__":
-    dataset_path = Path("data")
+    import sys
+    dataset_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")
     trained_model = train(dataset_path)
     torch.save(trained_model.state_dict(), "model.pt")

@@ -52,15 +52,15 @@ python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファク�
 
 ## 学習の実行
 
-学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。
+
+学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。データディレクトリを省略すると `data/` が使用されます。
 
 ```bash
-# 依存ライブラリのインストール
+# 依存ライブラリのインストール (リポジトリ直下に `requirements.txt` を同梱しています)
 pip install -r requirements.txt
 
 # データセットはリポジトリ直下の `data/` ディレクトリに配置
-python -m kickbike_analysis.train
+python -m kickbike_analysis.train data
 ```
 
 学習が完了すると `model.pt` が保存され、`infer.py` から利用できます。
-=======
