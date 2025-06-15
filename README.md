@@ -52,6 +52,7 @@ python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファク�
 
 ## 学習の実行
 
+
 学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。データディレクトリを省略すると `data/` が使用されます。
 
 ```bash
