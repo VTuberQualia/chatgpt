@@ -55,7 +55,7 @@ python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファク�
 学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。
 
 ```bash
-# 依存ライブラリのインストール
+# 依存ライブラリのインストール (リポジトリ直下に `requirements.txt` を同梱しています)
 pip install -r requirements.txt
 
 # データセットはリポジトリ直下の `data/` ディレクトリに配置
