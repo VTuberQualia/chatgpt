@@ -63,3 +63,4 @@ python -m kickbike_analysis.train
 ```
 
 学習が完了すると `model.pt` が保存され、`infer.py` から利用できます。
+=======
