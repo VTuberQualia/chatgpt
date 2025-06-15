@@ -49,3 +49,18 @@ python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファク�
 スクリプトは光学フローを用いた簡易的な特徴量をもとに、揺れの大きさと速度変化の滑らかさから「可」または「不可」を判定します。
 
 
+
+## 学習の実行
+
+学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。
+
+```bash
+# 依存ライブラリのインストール
+pip install -r requirements.txt
+
+# データセットはリポジトリ直下の `data/` ディレクトリに配置
+python -m kickbike_analysis.train
+```
+
+学習が完了すると `model.pt` が保存され、`infer.py` から利用できます。
+=======
