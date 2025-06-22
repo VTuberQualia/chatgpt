@@ -29,12 +29,14 @@ def train(dataset_dir: Path, epochs: int = 10):
     features = []
     labels = []
     for video in videos:
+
         feature_file = video.with_suffix(".npy")
         if feature_file.exists():
             motion = np.load(feature_file)
         else:
             frames = list(load_video_frames(video))
             motion = compute_frame_features(frames)
+
         if motion.size == 0:
             continue
         features.append(torch.tensor(motion, dtype=torch.float32))
@@ -43,7 +45,9 @@ def train(dataset_dir: Path, epochs: int = 10):
 
     if not features:
         raise RuntimeError(
+
             f"{dataset_dir} に利用可能な動画が見つかりません。mp4ファイルが存在し、十分な動きがあるか確認してください。"
+
         )
 
     # Pad sequences to the same length for this example

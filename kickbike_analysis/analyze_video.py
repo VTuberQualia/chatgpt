@@ -3,7 +3,9 @@ from typing import Tuple
 import numpy as np
 
 from .data_loader import load_video_frames
+
 from .feature_extractor import compute_frame_features
+
 
 
 def analyze(video_path: Path) -> Tuple[str, str]:
@@ -11,6 +13,7 @@ def analyze(video_path: Path) -> Tuple[str, str]:
     frames = list(load_video_frames(video_path))
     if not frames:
         return "不可", "動画を読み込めませんでした"
+
 
     features = compute_frame_features(frames)
     if features.size == 0:
@@ -30,6 +33,7 @@ def analyze(video_path: Path) -> Tuple[str, str]:
     if std_dev >= 15:
         reason.append("揺れが大きい")
     if smoothness >= 2:
+
         reason.append("速度変化が大きい")
     return "不可", "、".join(reason)
 
