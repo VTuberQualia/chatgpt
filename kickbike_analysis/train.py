@@ -4,6 +4,11 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
+
+def get_device() -> torch.device:
+    """Return CUDA device if available, otherwise CPU."""
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 from .data_loader import load_video_frames
 from .feature_extractor import compute_frame_features
 from .model import ReadinessModel
@@ -50,23 +55,30 @@ def train(dataset_dir: Path, epochs: int = 10):
 
         )
 
+    # Determine device
+    device = get_device()
+    print(f"Using device: {device}")
+
     # Pad sequences to the same length for this example
-    padded = torch.nn.utils.rnn.pad_sequence(features, batch_first=True)
-    labels_tensor = torch.stack(labels)
+    padded = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).to(device)
+    labels_tensor = torch.stack(labels).to(device)
     dataset = TensorDataset(padded, labels_tensor)
     loader = DataLoader(dataset, batch_size=2, shuffle=True)
 
-    model = ReadinessModel(input_size=padded.shape[-1])
+    model = ReadinessModel(input_size=padded.shape[-1]).to(device)
     criterion = torch.nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters())
 
     for _ in range(epochs):
         for batch_x, batch_y in loader:
+            batch_x = batch_x.to(device)
+            batch_y = batch_y.to(device)
             preds = model(batch_x)
             loss = criterion(preds.squeeze(), batch_y.squeeze())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+    model.to("cpu")
     return model
 
 
