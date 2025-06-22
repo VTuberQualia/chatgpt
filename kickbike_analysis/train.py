@@ -1,10 +1,11 @@
 """Training script for Kickbike Readiness Analyzer."""
 from pathlib import Path
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from .data_loader import load_video_frames
-from .feature_extractor import compute_motion_vectors
+from .feature_extractor import compute_frame_features
 from .model import ReadinessModel
 
 
@@ -13,6 +14,9 @@ def train(dataset_dir: Path, epochs: int = 10):
 
     A ``labels.csv`` file should map video file names to ``ok`` or ``ng``.
     """
+    if not dataset_dir.exists():
+        raise FileNotFoundError(f"{dataset_dir} が見つかりません")
+
     labels_file = dataset_dir / "labels.csv"
     label_map = {}
     if labels_file.exists():
@@ -25,8 +29,14 @@ def train(dataset_dir: Path, epochs: int = 10):
     features = []
     labels = []
     for video in videos:
-        frames = list(load_video_frames(video))
-        motion = compute_motion_vectors(frames)
+
+        feature_file = video.with_suffix(".npy")
+        if feature_file.exists():
+            motion = np.load(feature_file)
+        else:
+            frames = list(load_video_frames(video))
+            motion = compute_frame_features(frames)
+
         if motion.size == 0:
             continue
         features.append(torch.tensor(motion, dtype=torch.float32))
@@ -35,7 +45,9 @@ def train(dataset_dir: Path, epochs: int = 10):
 
     if not features:
         raise RuntimeError(
-            f"No usable data found in {dataset_dir}. Ensure *.mp4 videos exist and contain motion."
+
+            f"{dataset_dir} に利用可能な動画が見つかりません。mp4ファイルが存在し、十分な動きがあるか確認してください。"
+
         )
 
     # Pad sequences to the same length for this example
@@ -44,13 +56,13 @@ def train(dataset_dir: Path, epochs: int = 10):
     dataset = TensorDataset(padded, labels_tensor)
     loader = DataLoader(dataset, batch_size=2, shuffle=True)
 
-    model = ReadinessModel(input_size=1)
+    model = ReadinessModel(input_size=padded.shape[-1])
     criterion = torch.nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters())
 
     for _ in range(epochs):
         for batch_x, batch_y in loader:
-            preds = model(batch_x.unsqueeze(-1))
+            preds = model(batch_x)
             loss = criterion(preds.squeeze(), batch_y.squeeze())
             optimizer.zero_grad()
             loss.backward()

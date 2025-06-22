@@ -38,6 +38,19 @@ kickbike_analysis/
 
 学習用ディレクトリには `labels.csv` を配置し、各動画ファイル名と`ok` または `ng` のラベルをカンマ区切りで記載してください。
 
+## データセット準備
+
+各動画からフレーム単位の特徴量をあらかじめ抽出して ``.npy`` ファイルに保存する
+スクリプト `prepare_dataset.py` を用意しています。動画ファイルは
+`D:\20250525_ビタミンiファクトリーイベント動画` に置かれている想定です。
+
+```bash
+python -m kickbike_analysis.prepare_dataset "D:\\20250525_ビタミンiファクトリーイベント動画"
+```
+
+処理後、同ディレクトリに ``動画名.npy`` が作成されます。これらの特徴量は学習時に
+自動的に読み込まれます。
+
 ## 使い方
 
 推論だけを試す場合は `analyze_video.py` を実行します。Windows のフルパスも指定できます。
@@ -52,15 +65,17 @@ python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファク�
 
 ## 学習の実行
 
+学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。データディレクトリを省略すると `data/` が使用されます。ディレクトリには `*.mp4` 形式の動画と対応するラベルを記述した `labels.csv` を置いてください。動画が存在しない、または動きが検出できない場合はエラーとなります。
 
-学習用の動画と `labels.csv` をまとめたディレクトリを用意し、依存パッケージをインストールした上で `train.py` を実行します。データディレクトリを省略すると `data/` が使用されます。
 
 ```bash
 # 依存ライブラリのインストール (リポジトリ直下に `requirements.txt` を同梱しています)
 pip install -r requirements.txt
 
-# データセットはリポジトリ直下の `data/` ディレクトリに配置
-python -m kickbike_analysis.train data
+
+# 例: Windows 上の動画ディレクトリを指定して学習
+python -m kickbike_analysis.train "D:\\20250525_ビタミンiファクトリーイベント動画"
+
 ```
 
 学習が完了すると `model.pt` が保存され、`infer.py` から利用できます。
