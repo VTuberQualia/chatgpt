@@ -22,14 +22,14 @@
 kickbike_analysis/
 ├── __init__.py
 ├── data_loader.py      # 動画読み込みとフレーム抽出
-├── feature_extractor.py# フレームから動作特徴量を計算
+├── feature_extractor.py# 物体検出・人物追跡・姿勢推定による特徴量計算
 ├── model.py            # 機械学習モデル定義
 ├── train.py            # 学習エントリーポイント
 └── infer.py            # 推論を行うスクリプト
 ```
 
 - **data_loader.py**: 動画ファイルを読み込み、フレームやクリップに分割します。
-- **feature_extractor.py**: 姿勢推定などを用いて数値特徴量を生成します。
+- **feature_extractor.py**: 人物検出と簡易トラッキング、姿勢角度算出を行い、数値特徴量を生成します。
 - **model.py**: これらの特徴量を入力とする PyTorch 製のモデルを定義します。
 - **train.py**: `data_loader` と `feature_extractor` を利用してラベル付きデータからモデルを学習します。
 - **infer.py**: 学習済みモデルを読み込み、未知の動画に対してOK/NGを判定します。
@@ -59,7 +59,8 @@ python -m kickbike_analysis.prepare_dataset "D:\\20250525_ビタミンiファク
 python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファクトリーイベント動画\\DJI_20010311100342_0003_D.MP4"
 ```
 
-スクリプトは光学フローを用いた簡易的な特徴量をもとに、揺れの大きさと速度変化の滑らかさから「可」または「不可」を判定します。
+スクリプトは物体検出による人物領域の追跡と、簡易的な姿勢角度の変化を特徴量として利用します。
+揺れの大きさ、速度変化、体の傾きの安定度を総合的に評価し、判定理由も合わせて表示します。
 
 
 
@@ -79,3 +80,10 @@ python -m kickbike_analysis.train "D:\\20250525_ビタミンiファクトリー�
 ```
 
 学習が完了すると `model.pt` が保存され、`infer.py` から利用できます。
+推論結果は OK/NG に加えて、揺れや姿勢の安定度など理由テキストも返されます。
+
+### GPU の利用
+
+`train.py` と `infer.py` は CUDA 対応 GPU が存在する場合、自動的に GPU を使用して
+処理を行います。特別なオプションは不要で、PyTorch が GPU を認識できる環境であれ
+ば高速化が期待できます。

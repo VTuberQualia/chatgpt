@@ -19,23 +19,23 @@ def analyze(video_path: Path) -> Tuple[str, str]:
     if features.size == 0:
         return "不可", "動きが検出できませんでした"
 
-    # 揺れ (重心のばらつき) と速度変化を簡易的に評価
     center_var = float(np.std(features[:, :2]))
     speed_series = features[:, 2]
     smoothness = float(np.mean(np.abs(np.diff(speed_series))))
+    angle_series = features[:, 7]
+    angle_change = float(np.mean(np.abs(np.diff(angle_series))))
 
-    std_dev = center_var
-
-    # Thresholds chosen empirically for placeholder logic
-    if std_dev < 15 and smoothness < 2:
-        return "可", "揺れが小さくスムーズに走行しています"
-    reason = []
-    if std_dev >= 15:
-        reason.append("揺れが大きい")
+    reasons = []
+    if center_var >= 15:
+        reasons.append("揺れが大きい")
     if smoothness >= 2:
+        reasons.append("速度変化が大きい")
+    if angle_change >= 0.5:
+        reasons.append("体の傾きが安定しない")
 
-        reason.append("速度変化が大きい")
-    return "不可", "、".join(reason)
+    if not reasons:
+        return "可", "姿勢が安定しています"
+    return "不可", "、".join(reasons)
 
 
 if __name__ == "__main__":
