@@ -18,5 +18,11 @@ def prepare(dataset_dir: Path):
 
 if __name__ == "__main__":
     import sys
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")
+    if len(sys.argv) > 1:
+        path = Path(sys.argv[1])
+    else:
+        user_input = input(
+            "動画が保存されているフォルダを指定してください (空欄で 'data' フォルダを使用します): "
+        ).strip()
+        path = Path(user_input) if user_input else Path("data")
     prepare(path)
