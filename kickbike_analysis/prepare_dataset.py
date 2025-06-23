@@ -24,5 +24,12 @@ if __name__ == "__main__":
         user_input = input(
             "動画が保存されているフォルダを指定してください (空欄で 'data' フォルダを使用します): "
         ).strip()
+
+        user_input = user_input.strip('"')
         path = Path(user_input) if user_input else Path("data")
+
+    if path.suffix.lower() == ".mp4":
+        path = path.parent
+
+
     prepare(path)
