@@ -84,6 +84,18 @@ def train(dataset_dir: Path, epochs: int = 10):
 
 if __name__ == "__main__":
     import sys
-    dataset_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")
+    if len(sys.argv) > 1:
+        dataset_path = Path(sys.argv[1])
+    else:
+        prompt = (
+            "学習用動画フォルダのパスを入力してください (空欄で 'data' フォルダを使用します): "
+        )
+        inp = input(prompt).strip()
+        inp = inp.strip('"')
+        dataset_path = Path(inp) if inp else Path("data")
+
+    if dataset_path.suffix.lower() == ".mp4":
+        dataset_path = dataset_path.parent
+
     trained_model = train(dataset_path)
     torch.save(trained_model.state_dict(), "model.pt")
