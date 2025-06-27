@@ -10,8 +10,8 @@ from .data_loader import load_video_frames
 from .feature_extractor import compute_frame_features
 
 
-def _video_feature(video: Path) -> np.ndarray:
-    """Return averaged feature vector for a video."""
+def _video_features(video: Path) -> List[np.ndarray]:
+    """Return person-wise feature vectors for a video."""
     feature_file = video.with_suffix(".npy")
     if feature_file.exists():
         motion = np.load(feature_file)
@@ -19,8 +19,8 @@ def _video_feature(video: Path) -> np.ndarray:
         frames = list(load_video_frames(video))
         motion = compute_frame_features(frames)
     if motion.size == 0:
-        return np.array([])
-    return motion.mean(axis=0)
+        return []
+    return [motion[i] for i in range(motion.shape[0])]
 
 
 def train_clusters(dataset_dir: Path, n_clusters: int = 2) -> KMeans:
@@ -32,10 +32,10 @@ def train_clusters(dataset_dir: Path, n_clusters: int = 2) -> KMeans:
     videos = list(dataset_dir.glob("*.mp4"))
     features: List[np.ndarray] = []
     for video in videos:
-        vec = _video_feature(video)
-        if vec.size == 0:
+        vecs = _video_features(video)
+        if not vecs:
             continue
-        features.append(vec)
+        features.extend(vecs)
 
     if not features:
         raise RuntimeError(
@@ -56,9 +56,11 @@ def load_model(path: Path) -> KMeans:
     return joblib.load(path)
 
 
-def predict_cluster(video: Path, model: KMeans) -> int:
-    vec = _video_feature(video)
-    if vec.size == 0:
-        return -1
-    label = model.predict([vec])[0]
-    return int(label)
+def predict_cluster(video: Path, model: KMeans) -> List[int]:
+    """Return predicted cluster IDs for each detected person."""
+    vecs = _video_features(video)
+    if not vecs:
+        return []
+    data = np.stack(vecs)
+    labels = model.predict(data)
+    return [int(l) for l in labels]
