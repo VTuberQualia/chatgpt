@@ -8,19 +8,19 @@ from .feature_extractor import compute_frame_features
 
 
 
-def analyze(video_path: Path) -> List[Tuple[str, str]]:
-    """動画内の人物ごとの判定結果と画像を返す。"""
+def analyze(video_path: Path) -> List[Tuple[str, str, str]]:
+    """動画内の人物ごとの判定結果、コメント、画像パスを返す。"""
     frames = list(load_video_frames(video_path))
     if not frames:
-        return [("不明", "動画を読み込めませんでした")]
+        return [("不明", "動画を読み込めませんでした", "")]
 
     features, crops = compute_frame_features(frames, return_crops=True)
 
     if features.size == 0:
-        return [("不明", "動きが検出できませんでした")]
+        return [("不明", "動きが検出できませんでした", "")]
 
 
-    results: List[Tuple[str, str]] = []
+    results: List[Tuple[str, str, str]] = []
     for idx, (vec, crop) in enumerate(zip(features, crops), start=1):
         tilt, posture, face_dir, amp, _speed, _period = vec
         reasons = []
@@ -34,6 +34,7 @@ def analyze(video_path: Path) -> List[Tuple[str, str]]:
             reasons.append("蹴りが弱い")
 
         label = "合格" if not reasons else "不合格"
+        comment = "、".join(reasons) if reasons else "特に問題なし"
 
         frame_img, bbox = crop
         x1, y1, x2, y2 = bbox
@@ -43,7 +44,7 @@ def analyze(video_path: Path) -> List[Tuple[str, str]]:
         out_file = video_path.with_name(f"{video_path.stem}_person{idx}.jpg")
         cv2.imwrite(str(out_file), img)
 
-        results.append((label, str(out_file)))
+        results.append((label, comment, str(out_file)))
 
     return results
 
@@ -57,6 +58,6 @@ if __name__ == "__main__":
     path = Path(sys.argv[1])
 
     results = analyze(path)
-    for idx, (label, img_path) in enumerate(results, start=1):
-        print(f"person {idx}: {label} -> {img_path}")
+    for idx, (label, comment, img_path) in enumerate(results, start=1):
+        print(f"person {idx}: {label} ({comment}) -> {img_path}")
 
