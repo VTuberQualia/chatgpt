@@ -22,14 +22,15 @@
 kickbike_analysis/
 ├── __init__.py
 ├── data_loader.py      # 動画読み込みとフレーム抽出
-├── feature_extractor.py# 人物・自転車検出と簡易トラッキングによる特徴量計算
+├── feature_extractor.py# YOLOv8 + ByteTrack による特徴量計算
 ├── cluster.py          # KMeans ベースのクラスタリング処理
 ├── train.py            # クラスタリングのエントリーポイント
 └── infer.py            # 推論を行うスクリプト
 ```
 
 - **data_loader.py**: 動画ファイルを読み込み、フレームやクリップに分割します。
-- **feature_extractor.py**: Faster R-CNN を用いて人物と自転車を検出し、色ヒストグラムによる簡易トラッキングと姿勢角度算出から特徴量を生成します。
+- **feature_extractor.py**: YOLOv8 で人物・自転車を検出し、ByteTrack による追跡と
+  YOLOv8-pose の骨格情報からバランス・リズム・姿勢等の特徴量を算出します。
 - **cluster.py**: 平均特徴量を用いて KMeans でクラスタリングを行います。
 - **train.py**: `cluster.py` を利用して動画をクラスタリングし、結果を保存します。
 - **infer.py**: 学習済みのクラスタリングモデルを読み込み、新しい動画がどのクラスタに属するかを推定します。
@@ -64,9 +65,9 @@ python -m kickbike_analysis.prepare_dataset "D:\\20250525_ビタミンiファク
 python -m kickbike_analysis.analyze_video "D:\\20250525_ビタミンiファクトリーイベント動画\\DJI_20010311100342_0003_D.MP4"
 ```
 
-スクリプトは Faster R-CNN による人物・自転車検出と色ヒストグラムを用いた追跡、
-簡易的な姿勢角度の変化を特徴量として利用します。
-揺れの大きさ、速度変化、体の傾きの安定度を総合的に評価し、判定理由も合わせて表示します。
+スクリプトは YOLOv8 と ByteTrack により人物と自転車を検出・追跡し、
+骨格推定からバイクの傾きや蹴りのリズムを計算します。
+揺れや姿勢の安定度を評価し、判定理由も合わせて表示します。
 
 
 

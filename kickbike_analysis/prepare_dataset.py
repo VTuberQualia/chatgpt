@@ -6,7 +6,7 @@ from .feature_extractor import compute_frame_features
 
 
 def prepare(dataset_dir: Path):
-    """Extract per-frame features from videos under dataset_dir."""
+    """動画ごとに人物単位の特徴量を ``.npy`` として保存する。"""
     dataset_dir = Path(dataset_dir)
     for video in dataset_dir.glob("*.mp4"):
         frames = load_video_frames(video)

@@ -3,3 +3,6 @@ opencv-python
 torch
 torchvision
 scikit-learn
+ultralytics
+scipy
+pandas
