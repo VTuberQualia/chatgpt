@@ -2,10 +2,13 @@
 from typing import Iterable, List, Tuple
 import cv2
 import numpy as np
+import torch
+from torchvision import transforms
+from torchvision.models.detection import fasterrcnn_resnet50_fpn
 
-# Basic person detector using HOG. No external models are required so that the
-# repository works without additional downloads.  This also serves as a simple
-# tracker by matching detected regions between consecutive frames.
+# Detection/tracking utilities using a pre-trained Faster R-CNN model from
+# TorchVision.  The detector simultaneously推論s人物と自転車を検出し、色ヒストグラムを
+# 用いた簡易トラッキングを行う。
 
 def compute_motion_vectors(frames: Iterable[np.ndarray]) -> np.ndarray:
     """Compute simple frame-to-frame motion vectors."""
@@ -20,15 +23,55 @@ def compute_motion_vectors(frames: Iterable[np.ndarray]) -> np.ndarray:
     return np.array(vectors)
 
 
-def _detect_person(frame: np.ndarray, hog: cv2.HOGDescriptor) -> Tuple[int, int, int, int] | None:
-    """Return the largest detected person bounding box as ``(x, y, w, h)``."""
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    rects, _ = hog.detectMultiScale(gray, winStride=(4, 4), padding=(8, 8), scale=1.05)
-    if len(rects) == 0:
-        return None
-    # pick largest
-    rects = sorted(rects, key=lambda r: r[2] * r[3], reverse=True)
-    return tuple(rects[0])
+def _load_detector(device: torch.device):
+    """Load a pretrained Faster R-CNN model for person/bicycle detection."""
+    model = fasterrcnn_resnet50_fpn(weights="DEFAULT")
+    model.to(device)
+    model.eval()
+    transform = transforms.ToTensor()
+    return model, transform
+
+
+def _detect_person_bike(
+    frame: np.ndarray,
+    model: torch.nn.Module,
+    transform: transforms.Compose,
+    device: torch.device,
+) -> Tuple[np.ndarray | None, np.ndarray | None]:
+    """Return person and bike bounding boxes as ``[x1, y1, x2, y2]`` arrays."""
+    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    tensor = transform(img).to(device)
+    with torch.no_grad():
+        output = model([tensor])[0]
+
+    boxes = output["boxes"].cpu().numpy()
+    labels = output["labels"].cpu().numpy()
+    scores = output["scores"].cpu().numpy()
+
+    person_boxes = boxes[(labels == 1) & (scores > 0.5)]
+    bike_boxes = boxes[(labels == 2) & (scores > 0.5)]
+
+    person_box = None
+    if len(person_boxes) > 0:
+        areas = (person_boxes[:, 2] - person_boxes[:, 0]) * (
+            person_boxes[:, 3] - person_boxes[:, 1]
+        )
+        person_box = person_boxes[np.argmax(areas)].astype(int)
+
+    bike_box = None
+    if len(bike_boxes) > 0:
+        areas = (bike_boxes[:, 2] - bike_boxes[:, 0]) * (
+            bike_boxes[:, 3] - bike_boxes[:, 1]
+        )
+        bike_box = bike_boxes[np.argmax(areas)].astype(int)
+
+    return person_box, bike_box
+
+
+def _color_hist(roi: np.ndarray) -> np.ndarray:
+    hist = cv2.calcHist([roi], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+    hist = cv2.normalize(hist, hist).flatten()
+    return hist
 
 
 def _pose_angle(person_roi: np.ndarray) -> float:
@@ -45,11 +88,13 @@ def _pose_angle(person_roi: np.ndarray) -> float:
 
 def compute_frame_features(frames: Iterable[np.ndarray]) -> np.ndarray:
     """Return extended features per frame using detection, tracking and pose."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model, transform = _load_detector(device)
+
     features: List[List[float]] = []
-    prev_center = None
-    prev_bbox = None
-    hog = cv2.HOGDescriptor()
-    hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    prev_person_center = None
+    prev_bike_center = None
+    prev_hist = None
 
     for frame in frames:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -62,40 +107,72 @@ def compute_frame_features(frames: Iterable[np.ndarray]) -> np.ndarray:
             cx, cy = w / 2, h / 2
         center = np.array([cx, cy])
 
-        if prev_center is None:
-            speed = 0.0
-        else:
-            speed = float(np.linalg.norm(center - prev_center))
+        person_box, bike_box = _detect_person_bike(frame, model, transform, device)
 
-        bbox = _detect_person(frame, hog)
-        if bbox is None:
-            bbox = prev_bbox
-        if bbox is not None:
-            x, y, w_box, h_box = bbox
-            bbox_center = np.array([x + w_box / 2.0, y + h_box / 2.0])
-            aspect = w_box / h_box
-            area = w_box * h_box
-            roi = gray[y : y + h_box, x : x + w_box]
-            angle = _pose_angle(roi)
+        if person_box is not None:
+            px1, py1, px2, py2 = person_box
+            pw = px2 - px1
+            ph = py2 - py1
+            person_center = np.array([px1 + pw / 2.0, py1 + ph / 2.0])
+            aspect = pw / ph
+            area = pw * ph
+            roi = frame[py1:py2, px1:px2]
+            angle = _pose_angle(cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY))
+            hist = _color_hist(roi)
+            hist_diff = (
+                float(cv2.compareHist(prev_hist, hist, cv2.HISTCMP_BHATTACHARYYA))
+                if prev_hist is not None
+                else 0.0
+            )
+            prev_hist = hist
+            if prev_person_center is None:
+                person_speed = 0.0
+            else:
+                person_speed = float(np.linalg.norm(person_center - prev_person_center))
+            prev_person_center = person_center
         else:
-            bbox_center = np.zeros(2)
+            person_center = np.zeros(2)
             aspect = 0.0
             area = 0.0
             angle = 0.0
+            hist_diff = 0.0
+            person_speed = 0.0
+
+        if bike_box is not None:
+            bx1, by1, bx2, by2 = bike_box
+            bw = bx2 - bx1
+            bh = by2 - by1
+            bike_center = np.array([bx1 + bw / 2.0, by1 + bh / 2.0])
+            bike_area = bw * bh
+            if prev_bike_center is None:
+                bike_speed = 0.0
+            else:
+                bike_speed = float(np.linalg.norm(bike_center - prev_bike_center))
+            prev_bike_center = bike_center
+        else:
+            bike_center = np.zeros(2)
+            bike_area = 0.0
+            bike_speed = 0.0
+
+        distance = float(np.linalg.norm(person_center - bike_center))
 
         features.append(
             [
                 cx,
                 cy,
-                speed,
-                bbox_center[0],
-                bbox_center[1],
+                person_speed,
+                person_center[0],
+                person_center[1],
                 aspect,
                 area,
                 angle,
+                bike_center[0],
+                bike_center[1],
+                bike_area,
+                bike_speed,
+                distance,
+                hist_diff,
             ]
         )
 
-        prev_center = center
-        prev_bbox = bbox
     return np.array(features, dtype=np.float32)
