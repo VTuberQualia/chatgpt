@@ -15,7 +15,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable, Dict, List
+
+from typing import Iterable, Dict, List, Tuple
+
 
 import cv2
 import numpy as np
@@ -86,8 +88,29 @@ def _kick_period(foot_seq: List[float], fps: float) -> float:
 # メイン処理
 # ---------------------------------------------------------------------------
 
-def compute_frame_features(frames: Iterable[np.ndarray], fps: float = 30.0) -> np.ndarray:
-    """人物ごとの平均特徴量を計算して返す。"""
+
+def compute_frame_features(
+    frames: Iterable[np.ndarray],
+    fps: float = 30.0,
+    return_crops: bool = False,
+) -> np.ndarray | Tuple[np.ndarray, List[Tuple[np.ndarray, List[int]]]]:
+    """人物ごとの平均特徴量を計算する。
+
+    Parameters
+    ----------
+    frames:
+        解析対象のフレーム列。
+    fps:
+        フレームレート。蹴り周期計算に利用する。
+    return_crops:
+        True を指定すると人物ごとの切り出し画像も返す。
+
+    Returns
+    -------
+    np.ndarray | Tuple[np.ndarray, List[Tuple[np.ndarray, List[int]]]]
+        特徴量行列のみ、もしくは特徴量と切り出し画像の組。
+    """
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     det_model = YOLO("yolov8n.pt")
     pose_model = YOLO("yolov8n-pose.pt")
@@ -96,11 +119,16 @@ def compute_frame_features(frames: Iterable[np.ndarray], fps: float = 30.0) -> n
 
     tracker = BYTETracker()
 
-    person_memory: Dict[int, Dict[str, List]] = defaultdict(lambda: {
-        "centers": [],
-        "foot_y": [],
-        "keypoints": [],
-    })
+
+    person_memory: Dict[int, Dict[str, List]] = defaultdict(
+        lambda: {
+            "centers": [],
+            "foot_y": [],
+            "keypoints": [],
+            "crop": None,
+        }
+    )
+
 
     for frame in frames:
         det_results = det_model(frame)[0]
@@ -128,6 +156,24 @@ def compute_frame_features(frames: Iterable[np.ndarray], fps: float = 30.0) -> n
             center_y = (box[1] + box[3]) / 2
             person_memory[tid]["centers"].append([center_x, center_y])
 
+
+            if person_memory[tid]["crop"] is None:
+                # 対応するバイク領域を探索
+                bike_box = None
+                for bb in bike_boxes:
+                    if _iou(box, bb) > 0.3:
+                        bike_box = bb
+                        break
+                if bike_box is not None:
+                    x1 = min(box[0], bike_box[0])
+                    y1 = min(box[1], bike_box[1])
+                    x2 = max(box[2], bike_box[2])
+                    y2 = max(box[3], bike_box[3])
+                else:
+                    x1, y1, x2, y2 = box
+                person_memory[tid]["crop"] = (frame.copy(), [int(x1), int(y1), int(x2), int(y2)])
+
+
             # 該当するポーズを取得
             kp = None
             for pose_box, kpt in zip(poses.boxes.xyxy.cpu().numpy(), poses.keypoints.cpu().numpy()):
@@ -139,6 +185,9 @@ def compute_frame_features(frames: Iterable[np.ndarray], fps: float = 30.0) -> n
                 person_memory[tid]["foot_y"].append(float(kp[15, 1]))
 
     feature_vectors: List[np.ndarray] = []
+
+    crops: List[Tuple[np.ndarray, List[int]]] = []
+
     for info in person_memory.values():
         centers = np.array(info["centers"])
         if len(centers) < 2:
@@ -163,9 +212,17 @@ def compute_frame_features(frames: Iterable[np.ndarray], fps: float = 30.0) -> n
         feature_vectors.append(
             np.array([tilt_mean, posture, face_dir, amplitude, avg_speed, period], dtype=np.float32)
         )
+        if return_crops and info["crop"] is not None:
+            crops.append(info["crop"])
 
     if not feature_vectors:
+        if return_crops:
+            return np.empty((0, 6), dtype=np.float32), []
         return np.empty((0, 6), dtype=np.float32)
 
-    return np.stack(feature_vectors)
+    data = np.stack(feature_vectors)
+    if return_crops:
+        return data, crops
+    return data
+
 
