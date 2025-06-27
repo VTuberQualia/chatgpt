@@ -5,6 +5,7 @@ from .cluster import load_model, predict_cluster
 from .analyze_video import analyze
 
 
+
 def predict(video_path: Path, model_path: Path) -> list[tuple[int, str, str]]:
     """Return (cluster id, judge label, image path) for each person."""
     model = load_model(model_path)
@@ -18,6 +19,7 @@ def predict(video_path: Path, model_path: Path) -> list[tuple[int, str, str]]:
             label, img = "不明", ""
         results.append((cid, label, img))
     return results
+
 
 
 if __name__ == "__main__":

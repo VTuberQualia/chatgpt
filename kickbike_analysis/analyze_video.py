@@ -7,6 +7,7 @@ from .data_loader import load_video_frames
 from .feature_extractor import compute_frame_features
 
 
+
 def analyze(video_path: Path) -> List[Tuple[str, str]]:
     """動画内の人物ごとの判定結果と画像を返す。"""
     frames = list(load_video_frames(video_path))
@@ -14,8 +15,10 @@ def analyze(video_path: Path) -> List[Tuple[str, str]]:
         return [("不明", "動画を読み込めませんでした")]
 
     features, crops = compute_frame_features(frames, return_crops=True)
+
     if features.size == 0:
         return [("不明", "動きが検出できませんでした")]
+
 
     results: List[Tuple[str, str]] = []
     for idx, (vec, crop) in enumerate(zip(features, crops), start=1):
@@ -45,12 +48,15 @@ def analyze(video_path: Path) -> List[Tuple[str, str]]:
     return results
 
 
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
         print("Usage: python -m kickbike_analysis.analyze_video <video_path>")
         sys.exit(1)
     path = Path(sys.argv[1])
+
     results = analyze(path)
     for idx, (label, img_path) in enumerate(results, start=1):
         print(f"person {idx}: {label} -> {img_path}")
+

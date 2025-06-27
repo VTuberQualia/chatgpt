@@ -15,7 +15,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
+
 from typing import Iterable, Dict, List, Tuple
+
 
 import cv2
 import numpy as np
@@ -86,6 +88,7 @@ def _kick_period(foot_seq: List[float], fps: float) -> float:
 # メイン処理
 # ---------------------------------------------------------------------------
 
+
 def compute_frame_features(
     frames: Iterable[np.ndarray],
     fps: float = 30.0,
@@ -107,6 +110,7 @@ def compute_frame_features(
     np.ndarray | Tuple[np.ndarray, List[Tuple[np.ndarray, List[int]]]]
         特徴量行列のみ、もしくは特徴量と切り出し画像の組。
     """
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     det_model = YOLO("yolov8n.pt")
     pose_model = YOLO("yolov8n-pose.pt")
@@ -114,6 +118,7 @@ def compute_frame_features(
     pose_model.to(device)
 
     tracker = BYTETracker()
+
 
     person_memory: Dict[int, Dict[str, List]] = defaultdict(
         lambda: {
@@ -123,6 +128,7 @@ def compute_frame_features(
             "crop": None,
         }
     )
+
 
     for frame in frames:
         det_results = det_model(frame)[0]
@@ -150,6 +156,7 @@ def compute_frame_features(
             center_y = (box[1] + box[3]) / 2
             person_memory[tid]["centers"].append([center_x, center_y])
 
+
             if person_memory[tid]["crop"] is None:
                 # 対応するバイク領域を探索
                 bike_box = None
@@ -166,6 +173,7 @@ def compute_frame_features(
                     x1, y1, x2, y2 = box
                 person_memory[tid]["crop"] = (frame.copy(), [int(x1), int(y1), int(x2), int(y2)])
 
+
             # 該当するポーズを取得
             kp = None
             for pose_box, kpt in zip(poses.boxes.xyxy.cpu().numpy(), poses.keypoints.cpu().numpy()):
@@ -177,7 +185,9 @@ def compute_frame_features(
                 person_memory[tid]["foot_y"].append(float(kp[15, 1]))
 
     feature_vectors: List[np.ndarray] = []
+
     crops: List[Tuple[np.ndarray, List[int]]] = []
+
     for info in person_memory.values():
         centers = np.array(info["centers"])
         if len(centers) < 2:
@@ -214,4 +224,5 @@ def compute_frame_features(
     if return_crops:
         return data, crops
     return data
+
 
