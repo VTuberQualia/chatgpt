@@ -2,7 +2,11 @@
 from pathlib import Path
 import sys
 
-from .cluster import save_model, train_clusters
+# Support running as a standalone script
+try:  # pragma: no cover - import fallback
+    from .cluster import save_model, train_clusters
+except ImportError:  # run as script
+    from cluster import save_model, train_clusters
 
 
 def main(dataset_path: Path, out_path: Path = Path("clusters.pkl")) -> None:

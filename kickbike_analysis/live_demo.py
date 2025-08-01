@@ -18,14 +18,25 @@ import torch
 from ultralytics import YOLO
 from ultralytics.trackers.byte_tracker import BYTETracker
 
-from .feature_extractor import (
-    _bike_tilt,
-    _face_direction,
-    _foot_amplitude,
-    _kick_period,
-    _posture_stability,
-    _iou,
-)
+# Allow execution both as a module and as a standalone script
+try:  # pragma: no cover - import fallback
+    from .feature_extractor import (
+        _bike_tilt,
+        _face_direction,
+        _foot_amplitude,
+        _kick_period,
+        _posture_stability,
+        _iou,
+    )
+except ImportError:  # run as script
+    from feature_extractor import (
+        _bike_tilt,
+        _face_direction,
+        _foot_amplitude,
+        _kick_period,
+        _posture_stability,
+        _iou,
+    )
 
 # COCO style skeleton pairs used by YOLOv8 pose model
 _SKELETON = [
@@ -159,6 +170,6 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python -m kickbike_analysis.live_demo <video_path>")
+        print("Usage: python kickbike_analysis/live_demo.py <video_path>")
         raise SystemExit(1)
     show(Path(sys.argv[1]))
