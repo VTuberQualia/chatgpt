@@ -6,8 +6,13 @@ import joblib
 import numpy as np
 from sklearn.cluster import KMeans
 
-from .data_loader import load_video_frames
-from .feature_extractor import compute_frame_features
+# Allow importing when executed as standalone scripts
+try:  # pragma: no cover - import fallback
+    from .data_loader import load_video_frames
+    from .feature_extractor import compute_frame_features
+except ImportError:  # run as script
+    from data_loader import load_video_frames
+    from feature_extractor import compute_frame_features
 
 
 def _video_features(video: Path) -> List[np.ndarray]:

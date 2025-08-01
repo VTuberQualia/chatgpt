@@ -3,8 +3,13 @@ from typing import List, Tuple
 import numpy as np
 import cv2
 
-from .data_loader import load_video_frames
-from .feature_extractor import compute_frame_features
+# Allow running as a standalone script without package context
+try:  # pragma: no cover - simple import fallback
+    from .data_loader import load_video_frames
+    from .feature_extractor import compute_frame_features
+except ImportError:  # run as script
+    from data_loader import load_video_frames
+    from feature_extractor import compute_frame_features
 
 
 
@@ -52,8 +57,9 @@ def analyze(video_path: Path) -> List[Tuple[str, str, str]]:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
-        print("Usage: python -m kickbike_analysis.analyze_video <video_path>")
+        print("Usage: python kickbike_analysis/analyze_video.py <video_path>")
         sys.exit(1)
     path = Path(sys.argv[1])
 

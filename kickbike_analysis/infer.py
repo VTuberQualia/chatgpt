@@ -1,8 +1,13 @@
 """Inference using a fitted clustering model."""
 from pathlib import Path
 
-from .cluster import load_model, predict_cluster
-from .analyze_video import analyze
+# Support running as a standalone script
+try:  # pragma: no cover - import fallback
+    from .cluster import load_model, predict_cluster
+    from .analyze_video import analyze
+except ImportError:  # run as script
+    from cluster import load_model, predict_cluster
+    from analyze_video import analyze
 
 
 

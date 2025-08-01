@@ -1,8 +1,13 @@
 from pathlib import Path
 import numpy as np
 
-from .data_loader import load_video_frames
-from .feature_extractor import compute_frame_features
+# Allow this file to run as a standalone script
+try:  # pragma: no cover - fallback for script execution
+    from .data_loader import load_video_frames
+    from .feature_extractor import compute_frame_features
+except ImportError:  # run as script
+    from data_loader import load_video_frames
+    from feature_extractor import compute_frame_features
 
 
 def prepare(dataset_dir: Path):
