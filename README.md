@@ -26,7 +26,8 @@ kickbike_analysis/
 ├── infer.py           # 学習済みモデルを用いた推論
 ├── train.py           # ロジスティック回帰による学習スクリプト
 ├── prepare_dataset.py # 特徴量前計算スクリプト
-└── extract_images.py  # 学習用の切り出し画像作成
+├── extract_images.py  # 学習用の切り出し画像作成
+└── live_demo.py       # 動画をリアルタイム解析して表示
 ```
 
 ## 使い方
@@ -41,12 +42,22 @@ python -m kickbike_analysis.extract_images <video_dir> <out_dir> --limit 1000
 
 `<out_dir>` には最大 `--limit` 枚の画像が保存されます。
 
+### リアルタイムで動画を確認する（任意）
+
+学習用動画に対して検出結果をリアルタイムに表示したい場合は `live_demo.py` を使用します。
+
+```bash
+python -m kickbike_analysis.live_demo <video_path>
+```
+
+`q` キーで終了します。
+
 ### 1. 画像認識（特徴量抽出）
 
 `prepare_dataset.py` で動画から人物ごとの特徴量を計算し ``CSV`` や ``npy`` に保存できます。
 
 ```bash
-python -m kickbike_analysis.prepare_dataset <video_dir>
+python -m kickbike_analysis.train <dataset.csv> [out_model.pkl]
 ```
 
 ### 2. 学習
