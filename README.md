@@ -57,7 +57,7 @@ python -m kickbike_analysis.live_demo <video_path>
 `prepare_dataset.py` で動画から人物ごとの特徴量を計算し ``CSV`` や ``npy`` に保存できます。
 
 ```bash
-python -m kickbike_analysis.prepare_dataset <video_dir>
+python -m kickbike_analysis.train <dataset.csv> [out_model.pkl]
 ```
 
 ### 2. 学習
