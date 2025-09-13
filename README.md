@@ -23,38 +23,49 @@ kickbike_analysis/
 ├── quality_checker.py # 画質・構図の簡易チェック
 ├── scoring.py         # 特徴量からスコアとアドバイスを算出
 ├── segmentation.py    # 走行シーンの簡易セグメント化 (将来拡張用)
-├── infer.py           # 推論ユーティリティ
-├── train.py           # 学習スクリプト（骨組みのみ）
-└── prepare_dataset.py # 特徴量前計算スクリプト
+├── infer.py           # 学習済みモデルを用いた推論
+├── train.py           # ロジスティック回帰による学習スクリプト
+├── prepare_dataset.py # 特徴量前計算スクリプト
+└── extract_images.py  # 学習用の切り出し画像作成
 ```
 
 ## 使い方
 
-### 推論を試す
+### 0. 学習用画像を切り出す（任意）
+
+教師データを準備するため、動画から人物+バイクの領域を切り出して画像として保存できます。
 
 ```bash
-python -m kickbike_analysis.analyze_video <video_path>
+python -m kickbike_analysis.extract_images <video_dir> <out_dir> --limit 1000
 ```
 
-各人物について `score`, `category`, `advices`, `quality` を含む結果と
-判定付き画像が出力されます。簡易ラッパとして `infer.py` も利用できます。
+`<out_dir>` には最大 `--limit` 枚の画像が保存されます。
 
-```bash
-python -m kickbike_analysis.infer <video_path>
-```
+### 1. 画像認識（特徴量抽出）
 
-### データセット準備
-
-`prepare_dataset.py` で特徴量を前計算して ``.npy`` ファイルに保存できます。
+`prepare_dataset.py` で動画から人物ごとの特徴量を計算し ``CSV`` や ``npy`` に保存できます。
 
 ```bash
 python -m kickbike_analysis.prepare_dataset <video_dir>
 ```
 
-### 学習（未実装）
+### 2. 学習
 
-`train.py` は将来の分類器/強化学習モデル学習用の骨組みのみです。
-データセット形式が固まり次第、実装を追加する予定です。
+`train.py` に特徴量とラベルを格納した ``CSV`` を渡すとロジスティック回帰モデルを学習し ``model.pkl`` を出力します。
+
+```bash
+python -m kickbike_analysis.train <dataset.csv> [out_model.pkl]
+```
+
+### 3. 推論を試す
+
+学習済みモデルと解析したい動画を指定して推論を実行します。
+
+```bash
+python -m kickbike_analysis.infer <video_path> <model.pkl>
+```
+
+各人物について `score`, `category`, `advices`, `quality` を含む結果と判定付き画像が出力されます。
 
 ## 依存ライブラリ
 
