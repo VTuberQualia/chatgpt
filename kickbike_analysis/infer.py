@@ -1,34 +1,38 @@
-"""Inference using a fitted clustering model."""
-from pathlib import Path
+"""推論用ユーティリティ。
 
-# Support running as a standalone script
+学習済みモデルを必要とせず、`analyze_video` の結果をそのまま
+返す簡易版である。将来的には学習済み分類器や強化学習モデルを
+読み込んで使用する予定。
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import List, Dict
+
+# パッケージ外からも実行できるようにする
 try:  # pragma: no cover - import fallback
-    from .cluster import load_model, predict_cluster
     from .analyze_video import analyze
 except ImportError:  # run as script
-    from cluster import load_model, predict_cluster
     from analyze_video import analyze
 
 
-
-def predict(video_path: Path, model_path: Path) -> list[tuple[int, str, str, str]]:
-    """Return (cluster id, judge label, comment, image path) for each person."""
-    model = load_model(model_path)
-    labels = predict_cluster(video_path, model)
-    analyses = analyze(video_path)
-    results: list[tuple[int, str, str, str]] = []
-    for idx, cid in enumerate(labels):
-        if idx < len(analyses):
-            label, comment, img = analyses[idx]
-        else:
-            label, comment, img = "不明", "", ""
-        results.append((cid, label, comment, img))
-    return results
+def predict(video_path: Path) -> List[Dict[str, object]]:
+    """動画から人物ごとのスコアと判定を取得する。"""
+    return analyze(video_path)
 
 
+if __name__ == "__main__":  # pragma: no cover
+    import sys
 
-if __name__ == "__main__":
-    res = predict(Path("example.mp4"), Path("clusters.pkl"))
-    for cid, label, comment, img in res:
-        print(f"cluster {cid}: {label} ({comment}) -> {img}")
+    if len(sys.argv) < 2:
+        print("Usage: python -m kickbike_analysis.infer <video_path>")
+        sys.exit(1)
 
+    res = predict(Path(sys.argv[1]))
+    for r in res:
+        print(f"{r['score']}点 {r['category']} -> {r['image_path']}")
+        if r["advices"]:
+            print("  アドバイス:", "、".join(r["advices"]))
+        if r["quality"]:
+            print("  品質:", "、".join(r["quality"]))

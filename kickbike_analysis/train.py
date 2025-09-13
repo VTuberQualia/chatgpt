@@ -1,31 +1,34 @@
-"""Script for unsupervised clustering of kickbike videos."""
+"""乗りこなし判定モデルの学習エントリーポイント。
+
+現在は骨組みのみで、特徴量とラベルから分類器や強化学習モデルを
+学習する実装は未着手である。今後、要件定義8章で述べられている
+オフラインRLや模倣学習を取り入れた学習手順を実装する予定。
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
-import sys
-
-# Support running as a standalone script
-try:  # pragma: no cover - import fallback
-    from .cluster import save_model, train_clusters
-except ImportError:  # run as script
-    from cluster import save_model, train_clusters
 
 
-def main(dataset_path: Path, out_path: Path = Path("clusters.pkl")) -> None:
-    model = train_clusters(dataset_path)
-    save_model(model, out_path)
-    print(f"クラスタリング結果を {out_path} に保存しました")
+def main(dataset_path: Path, out_path: Path = Path("model.pkl")) -> None:
+    """指定ディレクトリから学習データを読み込みモデルを保存する。
+
+    Parameters
+    ----------
+    dataset_path: Path
+        特徴量とラベルを含むディレクトリ。
+    out_path: Path
+        学習済みモデルの出力先。
+    """
+    raise NotImplementedError(
+        "学習処理は未実装です。データセットの形式が固まり次第追加予定です。"
+    )
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        path = Path(sys.argv[1])
+    import sys
+
+    if len(sys.argv) < 2:
+        print("Usage: python -m kickbike_analysis.train <dataset_dir>")
     else:
-        user_input = input(
-            "動画フォルダのパスを入力してください (空欄で 'data' フォルダを使用します): "
-        ).strip()
-        user_input = user_input.strip('"')
-        path = Path(user_input) if user_input else Path("data")
-
-    if path.suffix.lower() == ".mp4":
-        path = path.parent
-
-    main(path)
+        main(Path(sys.argv[1]))
