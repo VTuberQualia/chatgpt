@@ -202,5 +202,10 @@ def show(video_path: Path) -> None:
     cap.release(); cv2.destroyAllWindows()
 
 
-if __name__=="__main__":
-    show(Path(r"I:\chatgpt-main\chatgpt-main\data\test2.mp4"))
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="学習用動画をリアルタイム解析して表示する")
+    parser.add_argument("video_path", type=Path, help="解析する動画ファイル")
+    args = parser.parse_args()
+    show(args.video_path)
